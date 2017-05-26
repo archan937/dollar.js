@@ -1,0 +1,14 @@
+{
+  "name": "dollar.js",
+  "version": "0.1.0",
+  "license": "MIT",
+  "description": "A minimalistic Javascript library for DOM manipulation, event binding, introspection",
+  "authors": [
+    "Paul Engel <pm_engel@icloud.com> (http://github.com/archan937)"
+  ],
+  "devDependencies": {
+    "grunt": "1.0.1",
+    "grunt-contrib-concat": "1.0.1",
+    "grunt-contrib-watch": "1.0.0"
+  }
+}
