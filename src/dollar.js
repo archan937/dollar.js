@@ -10,8 +10,27 @@ if (typeof(Dollar) == 'undefined') {
 // * $Date: {date} $
 // *
 
-Dollar = (function() {
-  // implementation
-}());
+Dollar = define('dollar.js', function() {
+  var $ = function() {
+    return __fn__.$.apply(this, arguments);
+  };
+
+  extend($, __fn__);
+  $.version = '{version}';
+
+  return $;
+},
+  'Identifier',
+  'Utils',
+  'Introspect',
+  'Collections',
+  'Elements',
+  'Events',
+  'Draggable',
+  'Inject',
+  'Config'
+);
+
+window.$ = Dollar;
 
 }
