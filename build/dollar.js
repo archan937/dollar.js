@@ -34,7 +34,7 @@ mod = (function() {
         body.push('');
       }
 
-      body.push(init.toString().split('\n').slice(1, -1).join('\n').replace(/(^\s*|\s*$)/, ''));
+      body.push(init.toString().replace(/(^function\s*\(.*?\)\s*\{\s*|\s*$)/, '').replace(/\}$/, ''));
 
       return (new Function(body.join('\n'))());
     }
