@@ -16,7 +16,11 @@ Dollar = define('dollar.js', function() {
   };
 
   extend($, __fn__);
+
   $.version = '{version}';
+  $.ready(function() {
+    window.$ready && window.$ready();
+  });
 
   return $;
 },

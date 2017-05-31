@@ -3,12 +3,14 @@
   <head>
     <meta charset="utf-8">
     <title>Dollar.js</title>
+    <script>
+      function $ready() {
+        $('body').append('<h1>Hello you!</h1>');
+        $('h1').after('<p>My name is dollar.js! But you can call me Dollar or $. Please to meet you ;)</p>');
+      }
+    </script>
   </head>
   <body>
     <script src="../build/dollar.js"></script>
-    <script>
-      $('body').append('<h1>Hello you!</h1>');
-      $('h1').after('<p>My name is dollar.js! But you can call me Dollar or $. Please to meet you ;)</p>');
-    </script>
   </body>
 </html>
