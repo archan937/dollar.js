@@ -32,7 +32,8 @@ Dollar = define('dollar.js', function() {
   'Events',
   'Draggable',
   'Inject',
-  'Config'
+  'Config',
+  'Ajax'
 );
 
 window.$ = Dollar;
