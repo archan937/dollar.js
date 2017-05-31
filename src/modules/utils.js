@@ -1,6 +1,5 @@
 mod.define('Utils', function() {
   return {
-
     vw: function(px) {
       return parseInt(px) / viewWidth() * 100;
     },
@@ -27,6 +26,5 @@ mod.define('Utils', function() {
       color = '#' + color;                   // prepend '#'
       return color;
     }
-
   };
 });

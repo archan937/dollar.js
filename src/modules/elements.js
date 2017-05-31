@@ -1,6 +1,5 @@
 mod.define('Elements', function() {
   var
-
     fn = {
       find: function(selector) {
         return $(selector, this);

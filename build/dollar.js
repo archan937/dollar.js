@@ -122,9 +122,7 @@ mod.define('Config', function() {
 });
 
 mod.define('Draggable', function() {
-
   var
-
     elements = [],
     configs = [],
     dragged,
@@ -224,7 +222,6 @@ mod.define('Draggable', function() {
 
 mod.define('Elements', function() {
   var
-
     fn = {
       find: function(selector) {
         return $(selector, this);
@@ -989,7 +986,6 @@ mod.define('Introspect', function() {
 
 mod.define('Utils', function() {
   return {
-
     vw: function(px) {
       return parseInt(px) / viewWidth() * 100;
     },
@@ -1016,7 +1012,6 @@ mod.define('Utils', function() {
       color = '#' + color;                   // prepend '#'
       return color;
     }
-
   };
 });
 

@@ -1,7 +1,5 @@
 mod.define('Draggable', function() {
-
   var
-
     elements = [],
     configs = [],
     dragged,
