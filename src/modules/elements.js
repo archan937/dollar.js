@@ -318,7 +318,7 @@ mod.define('Elements', function() {
     },
 
   newElement = function(html) {
-    if ((typeof(html) == 'string') && html.match(/^\<(\w+)(.+\<\/\1)?\>$/m)) {
+    if ((typeof(html) == 'string') && html.match(/^\<(\w+)(.+(\<\/\1|\/?))?\>$/m)) {
       var el = document.createElement('div');
       el.innerHTML = html;
       return wrap(el.childNodes[0]);
