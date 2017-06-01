@@ -348,6 +348,10 @@ mod.define('Elements', function() {
         }
       },
 
+      val: function() {
+        return this.value;
+      },
+
       root: function() {
         return root(this);
       },
