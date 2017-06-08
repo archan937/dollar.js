@@ -378,7 +378,7 @@ mod.define('Elements', function() {
       return wrap([]);
     }
     if (!arg.at) {
-      if (arg.nodeType) {
+      if (arg.nodeType || !arg.entries) {
         arg = [arg];
       }
       for (var prop in fn) {
