@@ -101,16 +101,20 @@ mod.define('Elements', function() {
 
       innerWrap: function(tag, attributes) {
         var attrs = '', name;
-        for (name in (attributes || {})) {
-          attrs += ' ' + name + '="' + attributes[name].toString().replace(/\n/g, "\\n").replace(/\"/g, "\\\"") + '"';
+        if (attributes) {
+          for (name in attributes) {
+            attrs += ' ' + name + '="' + attributes[name].toString().replace(/\n/g, "\\n").replace(/\"/g, "\\\"") + '"';
+          }
         }
         this.innerHTML = '<' + tag + attrs + '>' + this.innerHTML + '</' + tag + '>';
       },
 
       outerWrap: function(tag, attributes) {
         var outerEl = document.createElement(tag), name;
-        for (name in (attributes || {})) {
-          outerEl.setAttribute(name, attributes[name]);
+        if (attributes) {
+          for (name in attributes) {
+            outerEl.setAttribute(name, attributes[name]);
+          }
         }
         this.parentNode.insertBefore(outerEl, this);
         outerEl.appendChild(this);
@@ -318,7 +322,7 @@ mod.define('Elements', function() {
     },
 
   newElement = function(html) {
-    if ((typeof(html) == 'string') && html.match(/^\<(\w+)(.+(\<\/\1|\/?))?\>$/m)) {
+    if ((typeof(html) == 'string') && html.match(/\<(\w+)(.+(\<\/\1|\/?))?\>$/m)) {
       var el = document.createElement('div');
       el.innerHTML = html;
       return wrap(el.childNodes[0]);
