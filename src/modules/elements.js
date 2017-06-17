@@ -52,7 +52,7 @@ mod.define('Elements', function() {
         if (arguments.length) {
           this.innerHTML = val;
         } else {
-          return this.innerHTML;
+          return this.innerHTML || this.innerText;
         }
       },
 
@@ -74,7 +74,7 @@ mod.define('Elements', function() {
 
       addClass: function() {
         var classes = ((arguments[0] instanceof Array) ? arguments[0] : arguments);
-        classes = Array.prototype.join.call(classes, " ");
+        classes = Array.prototype.join.call(classes, ' ');
         this.classList.add.apply(this.classList, classes.trim().split(/\s+/));
       },
 
