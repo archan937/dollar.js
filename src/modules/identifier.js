@@ -1,17 +1,31 @@
 mod.define('Identifier', function() {
   var
-    id = 0;
+    objects = [undefined];
+
+  Object.defineProperty(Object.prototype, '_id', {
+    enumerable: false,
+    value: function() {
+      var id = this.__id__;
+      if (id == undefined) {
+        Object.defineProperty(this, '__id__', {
+          enumerable: false,
+          writable: false,
+          value: (id = objects.length)
+        });
+        objects.push(this);
+      }
+      return id;
+    }
+  });
 
   return {
-    objectid: function(object) {
-      if (typeof(object.__objectid) == 'undefined') {
-        Object.defineProperty(object, '__objectid', {
-          value: ++id,
-          enumerable: false,
-          writable: false
-        });
+    getobject: function(id) {
+      if (typeof(id) == 'number') {
+        return objects[id];
       }
-      return object.__objectid;
+    },
+    objectid: function(object) {
+      return object._id();
     }
   };
 });

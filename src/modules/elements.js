@@ -1,6 +1,10 @@
 mod.define('Elements', function() {
   var
     fn = {
+      objectid: function() {
+        return this._id();
+      },
+
       find: function(selector) {
         return $(selector, this);
       },
