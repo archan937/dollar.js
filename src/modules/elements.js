@@ -302,6 +302,17 @@ mod.define('Elements', function() {
         }.bind(this));
       },
 
+      replace: function(el) {
+        el = $(el);
+        $(this).before(el);
+        $(this).remove();
+        return el;
+      },
+
+      replaceWith: function(el) {
+        $(this).replace(el);
+      },
+
       toShadowDom: function(id) {
         var body = document.body, el;
         if (body.createShadowRoot) {
