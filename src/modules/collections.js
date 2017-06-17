@@ -32,6 +32,14 @@ mod.define('Collections', function() {
       }
     },
 
+    collect: function(array, f) {
+      var result = [];
+      each(array, function() {
+        result.push(f.apply(this, arguments));
+      });
+      return result;
+    },
+
     select: function(array, f) {
       var selected = [];
       each(array, function(el) {
