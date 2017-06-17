@@ -147,6 +147,14 @@ mod.define('Collections', function() {
       }
     },
 
+    collect: function(array, f) {
+      var result = [];
+      each(array, function() {
+        result.push(f.apply(this, arguments));
+      });
+      return result;
+    },
+
     select: function(array, f) {
       var selected = [];
       each(array, function(el) {
@@ -293,6 +301,10 @@ mod.define('Draggable', function() {
 mod.define('Elements', function() {
   var
     fn = {
+      objectid: function() {
+        return this._id();
+      },
+
       find: function(selector) {
         return $(selector, this);
       },
@@ -344,7 +356,7 @@ mod.define('Elements', function() {
         if (arguments.length) {
           this.innerHTML = val;
         } else {
-          return this.innerHTML;
+          return this.innerHTML || this.innerText;
         }
       },
 
@@ -366,7 +378,7 @@ mod.define('Elements', function() {
 
       addClass: function() {
         var classes = ((arguments[0] instanceof Array) ? arguments[0] : arguments);
-        classes = Array.prototype.join.call(classes, " ");
+        classes = Array.prototype.join.call(classes, ' ');
         this.classList.add.apply(this.classList, classes.trim().split(/\s+/));
       },
 
@@ -393,16 +405,20 @@ mod.define('Elements', function() {
 
       innerWrap: function(tag, attributes) {
         var attrs = '', name;
-        for (name in (attributes || {})) {
-          attrs += ' ' + name + '="' + attributes[name].toString().replace(/\n/g, "\\n").replace(/\"/g, "\\\"") + '"';
+        if (attributes) {
+          for (name in attributes) {
+            attrs += ' ' + name + '="' + attributes[name].toString().replace(/\n/g, "\\n").replace(/\"/g, "\\\"") + '"';
+          }
         }
         this.innerHTML = '<' + tag + attrs + '>' + this.innerHTML + '</' + tag + '>';
       },
 
       outerWrap: function(tag, attributes) {
         var outerEl = document.createElement(tag), name;
-        for (name in (attributes || {})) {
-          outerEl.setAttribute(name, attributes[name]);
+        if (attributes) {
+          for (name in attributes) {
+            outerEl.setAttribute(name, attributes[name]);
+          }
         }
         this.parentNode.insertBefore(outerEl, this);
         outerEl.appendChild(this);
@@ -590,6 +606,17 @@ mod.define('Elements', function() {
         }.bind(this));
       },
 
+      replace: function(el) {
+        el = $(el);
+        $(this).before(el);
+        $(this).remove();
+        return el;
+      },
+
+      replaceWith: function(el) {
+        $(this).replace(el);
+      },
+
       toShadowDom: function(id) {
         var body = document.body, el;
         if (body.createShadowRoot) {
@@ -610,7 +637,7 @@ mod.define('Elements', function() {
     },
 
   newElement = function(html) {
-    if ((typeof(html) == 'string') && html.match(/^\<(\w+)(.+(\<\/\1|\/?))?\>$/m)) {
+    if ((typeof(html) == 'string') && html.match(/\<(\w+)(.+(\<\/\1|\/?))?\>$/m)) {
       var el = document.createElement('div');
       el.innerHTML = html;
       return wrap(el.childNodes[0]);
@@ -842,18 +869,38 @@ mod.define('Events', function() {
 
 mod.define('Identifier', function() {
   var
-    id = 0;
+    objects = [undefined],
+
+  extend = function(arg) {
+    Object.defineProperty(arg, '_id', {
+      enumerable: false,
+      value: function() {
+        var id = this.__id__;
+        if (id == undefined) {
+          Object.defineProperty(this, '__id__', {
+            enumerable: false,
+            writable: false,
+            value: (id = objects.length)
+          });
+          objects.push(this);
+        }
+        return id;
+      }
+    });
+  };
+
+  extend(Object.prototype);
 
   return {
-    objectid: function(object) {
-      if (typeof(object.__objectid) == 'undefined') {
-        Object.defineProperty(object, '__objectid', {
-          value: ++id,
-          enumerable: false,
-          writable: false
-        });
+    getobject: function(id) {
+      if (typeof(id) == 'number') {
+        return objects[id];
       }
-      return object.__objectid;
+    },
+    objectid: function(object) {
+      if (!object._id)
+        extend(object);
+      return object._id();
     }
   };
 });
@@ -1058,6 +1105,281 @@ mod.define('Introspect', function() {
   };
 });
 
+mod.define('Render', function() {
+  var
+    nodes = {},
+    objects = {},
+
+  scanPaths = function(el) {
+    var
+      paths = [],
+      walker = document.createTreeWalker(
+        el,
+        NodeFilter.SHOW_ALL, {
+          acceptNode: function(node) {
+            if (!node.hasAttribute || !node.hasAttribute('data-in')) {
+              return NodeFilter.FILTER_ACCEPT;
+            }
+          }
+        },
+        false
+      ),
+      node;
+
+    while (node = walker.nextNode()) {
+      if ((node.nodeType == Node.TEXT_NODE) && /\{\{.*?\}\}/.test(node.nodeValue)) {
+        paths.push(node);
+      }
+    }
+
+    return paths;
+  },
+
+  scanCollections = function(el) {
+    var
+      collections = [],
+      walker = document.createTreeWalker(
+        el,
+        NodeFilter.SHOW_ALL, {
+          acceptNode: function(node) {
+            if (node.parentNode.hasAttribute && node.parentNode.hasAttribute('data-in')) {
+              return NodeFilter.FILTER_REJECT;
+            } else {
+              return NodeFilter.FILTER_ACCEPT;
+            }
+          }
+        },
+        false
+      ),
+      node;
+
+    while (node = walker.nextNode()) {
+      if (node.hasAttribute && node.hasAttribute('data-in')) {
+        collections.push(node);
+      }
+    }
+
+    return collections;
+  },
+
+  join = function() {
+    return Array.prototype.join.call(arguments, '.');
+  },
+
+  split = function(html) {
+    var parts = [];
+
+    each(html.split(/(.*?)(\{\{.*?\}\})/g), function(text) {
+      if (text.length && text != '\n') {
+        parts.push(text);
+      }
+    });
+
+    return parts;
+  },
+
+  bindPaths = function(prefix, el, object) {
+    each(scanPaths(el[0]), function(node) {
+      var $node = $(node), match;
+
+      each(split(node.nodeValue), function(text) {
+        var textNode = document.createTextNode(text), path;
+
+        if (match = text.match(/\{\{\s*(.*?)\s*\}\}/)) {
+          path = match[1];
+          bind(prefix, object, path, textNode);
+        }
+
+        $node.before(textNode);
+      });
+
+      $node.remove();
+    });
+  },
+
+  bindCollections = function(prefix, el, object) {
+    each(scanCollections(el[0]), function(collection) {
+      var
+        $collection = $(collection),
+        tag = collection.nodeName.toLowerCase(),
+        prop = $collection.attr('data-in'),
+        html = $collection.html(),
+        template = $collection.replace(
+          $('<template>').attr('data-tag', tag).attr('data-prop', prop).html(html)
+        );
+
+      bind(prefix, object, prop, template);
+    });
+  },
+
+  bind = function(prefix, object, path, node) {
+    register(join(prefix, path), node);
+    observe(prefix, object, path);
+    trigger(join(prefix, path));
+  },
+
+  register = function(path, node) {
+    var
+      registered = nodes[path] || (nodes[path] = []);
+
+    each((node instanceof Array) ? node : [node], function(textNode) {
+      if (indexOf(textNode, registered) == -1) {
+        registered.push(textNode);
+      }
+    });
+  },
+
+  observe = function(prefix, object, path) {
+    if (object && typeof(object) == 'object')
+      objects[prefix] = object._id();
+    else
+      delete objects[prefix];
+
+    if (!object || !path)
+      return;
+
+    if (path == '.') {
+      objects[join(prefix, path)] = object._id();
+      return;
+    }
+
+    var
+      segments = path.match(/(\w+)\.?([\w+\.]*)/),
+      prop = segments[1],
+      rest = segments[2],
+      descriptor, path, value;
+
+    if (typeof(object) == 'object') {
+      descriptor = Object.getOwnPropertyDescriptor(object, prop);
+      path = join(prefix, prop);
+      value = object[prop];
+
+      if (!descriptor || !descriptor.set) {
+        value = parseValue(path, value);
+        Object.defineProperty(object, prop, {
+          get: function() {
+            return value;
+          },
+          set: function(val) {
+            value = parseValue(path, val);
+            observe(path, value, rest);
+            trigger(path);
+          }
+        });
+      }
+
+      observe(path, value, rest);
+    }
+  },
+
+  parseValue = function(path, value) {
+    if (value instanceof Array) {
+      value = new Proxy(value, {
+        set: function(array, key, val) {
+          array[key] = val;
+          if (/^\d+$/.test(key))
+            update(path, key);
+          return true;
+        }
+      });
+    }
+    return value;
+  },
+
+  trigger = function(identifier) {
+    each(keys(nodes), function(path) {
+      if (path.startsWith(identifier)) {
+        update(path);
+      }
+    });
+  },
+
+  update = function(path, index) {
+    var
+      segments = path.match(/(.*?)\.([^\.]*\.?)$/),
+      object = $(objects[segments[1]]) || {},
+      prop = segments[2],
+      value = ((prop == '.') ? $(objects[path]) : object[prop]),
+      registered = (nodes[path] || []);
+
+    each(registered, function(node) {
+      if (node.nodeType == Node.TEXT_NODE)
+        node.nodeValue = value || '';
+      else
+        updateCollection(path, node, value || [], index);
+    });
+  },
+
+  updateCollection = function(path, template, array, index) {
+    var
+      el = $(template),
+      tag = el.attr('data-tag'),
+      prop = el.attr('data-prop'),
+      html = el.html(),
+      all = typeof(index) == 'undefined',
+      index = parseInt(index, 10),
+      next;
+
+    each(array || [], function(object, i) {
+      next = el.next('[data-for=' + prop + ']');
+
+      if (!next.length) {
+        next = $('<' + tag + '>').attr('data-for', prop);
+        el.after(next);
+      }
+      el = next;
+
+      if (all || (i == index)) {
+        $.t(html, object, el, path + '[' + i + ']');
+      }
+    });
+
+    var i = array.length;
+
+    while ((next = el.next('[data-for=' + prop + ']')).length) {
+      delete objects[path + '[' + i + ']'];
+      next.remove();
+      i++;
+    }
+  },
+
+  render = function(arg, object, replace, prefix) {
+    var el, template;
+
+    if (arguments.length == 1) {
+      el = $('template')[0];
+      object = arguments[0];
+      replace = true;
+    }
+
+    el || (el = document.getElementById(arg));
+
+    if (el)
+      el = $(el);
+    else
+      el = $(/\<(\w+)(.+(\<\/\1|\/?))?\>$/.test(arg) ? arg : ('<span>' + arg + '</span>'));
+
+    template = el.html();
+
+    if (replace)
+      el = (replace == true) ? el.outerWrap('div') : replace;
+    else
+      el = $('<div>');
+
+    prefix || (prefix = object._id());
+
+    el.html(template);
+    bindPaths(prefix, el, object);
+    bindCollections(prefix, el, object);
+
+    return el;
+  };
+
+  return {
+    render: render
+  };
+});
+
 mod.define('Utils', function() {
   return {
     vw: function(px) {
@@ -1093,7 +1415,7 @@ if (typeof(Dollar) == 'undefined') {
 
 // *
 // * dollar.js {version} (Uncompressed)
-// * A minimalistic Javascript library for DOM manipulation, event binding, introspection.
+// * A minimalistic Javascript library for DOM manipulation, template rendering (data binded), event binding, introspection.
 // *
 // * (c) {year} Paul Engel
 // * dollar.js is licensed under MIT license
@@ -1103,12 +1425,17 @@ if (typeof(Dollar) == 'undefined') {
 
 Dollar = define('dollar.js', function() {
   var $ = function() {
-    return __fn__.$.apply(this, arguments);
+    if (typeof(arguments[0]) == 'number')
+      return __fn__.getobject.apply(this, arguments);
+    else
+      return __fn__.$.apply(this, arguments);
   };
 
   extend($, __fn__);
 
+  $.t = __fn__.render;
   $.version = '{version}';
+
   $.ready(function() {
     window.$ready && window.$ready();
   });
@@ -1119,12 +1446,13 @@ Dollar = define('dollar.js', function() {
   'Utils',
   'Introspect',
   'Collections',
+  'Ajax',
   'Elements',
+  'Config',
+  'Inject',
   'Events',
   'Draggable',
-  'Inject',
-  'Config',
-  'Ajax'
+  'Render'
 );
 
 window.$ = Dollar;

@@ -5,12 +5,74 @@
     <title>Dollar.js</title>
     <script>
       function $ready() {
-        $('body').append('<h1>Hello you!</h1>');
+        $('body').prepend('<h1>Hello you!</h1>');
         $('h1').after('<p>My name is dollar.js! But you can call me Dollar or $. Please to meet you ;)</p>');
+
+        var object = {
+          first_name: 'Ken',
+          last_name: 'Adams'
+        };
+
+        $.t('example', object, true);
+        $.t('First name: {{ first_name}}', object).appendTo('body');
+        $.t('Last name: {{last_name }}', object).appendTo('body');
+        $.t('Company: {{ company.name }}', object).appendTo('body');
+        $.t('Bla: {{ bla }}', object).appendTo('body');
+        $.t('FooBar: {{ foo.bar }}', object).appendTo('body');
+
+        setTimeout(function() {
+          object.languages = [{name: 'RB', tags: ['backend', 'foo', 'bar', 'baz']}, {name: 'JS'}];
+          object.company = {name: 'Betty'};
+        }, 1000);
+
+        setTimeout(function() {
+          object.first_name = 'Paul';
+          object.languages[1] = {name: 'Javascript'};
+          object.languages[1].tags = ['Web', 'Script'];
+          object.languages.push({name: 'EX'});
+          object.languages.push({name: 'Haskle'});
+        }, 2000);
+
+        setTimeout(function() {
+          object.last_name = 'Engel';
+          object.languages = [
+            {name: 'Ruby'},
+            {name: 'Javascript', tags: ['frontend']},
+            {name: 'Elixir', tags: ['functional', 'phoenix']}
+          ];
+          object.company.name = 'Betty Blocks';
+          object.foo = {};
+        }, 3000);
+
+        setTimeout(function() {
+          object.languages[1].tags.push('jquery');
+          object.languages[2].tags[1] = 'ecto';
+          object.company = {name: 'Betty Blocks BV'};
+          object.bla = 'BLA!';
+          object.foo.bar = 'FOOBAR!';
+        }, 4000);
       }
     </script>
   </head>
   <body>
+    <template id="example">
+      <p>
+        My author's name is {{first_name}} {{last_name}}.
+      </p>
+      <p>
+        He likes programming in:
+      </p>
+      <ul>
+        <li data-in="languages">
+          {{ name }}
+          <ol>
+            <li data-in="tags">
+              {{.}}
+            </li>
+          </ol>
+        </li>
+      </ul>
+    </template>
     <script src="../build/dollar.js"></script>
   </body>
 </html>

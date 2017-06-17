@@ -2,7 +2,7 @@
   "name": "dollar.js",
   "version": "0.1.0",
   "license": "MIT",
-  "description": "A minimalistic Javascript library for DOM manipulation, event binding, introspection",
+  "description": "A minimalistic Javascript library for DOM manipulation, template rendering (data binded), event binding, introspection",
   "authors": [
     "Paul Engel <pm_engel@icloud.com> (http://github.com/archan937)"
   ],

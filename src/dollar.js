@@ -2,7 +2,7 @@ if (typeof(Dollar) == 'undefined') {
 
 // *
 // * dollar.js {version} (Uncompressed)
-// * A minimalistic Javascript library for DOM manipulation, event binding, introspection.
+// * A minimalistic Javascript library for DOM manipulation, template rendering (data binded), event binding, introspection.
 // *
 // * (c) {year} Paul Engel
 // * dollar.js is licensed under MIT license
@@ -20,7 +20,9 @@ Dollar = define('dollar.js', function() {
 
   extend($, __fn__);
 
+  $.t = __fn__.render;
   $.version = '{version}';
+
   $.ready(function() {
     window.$ready && window.$ready();
   });
@@ -31,12 +33,13 @@ Dollar = define('dollar.js', function() {
   'Utils',
   'Introspect',
   'Collections',
+  'Ajax',
   'Elements',
+  'Config',
+  'Inject',
   'Events',
   'Draggable',
-  'Inject',
-  'Config',
-  'Ajax'
+  'Render'
 );
 
 window.$ = Dollar;

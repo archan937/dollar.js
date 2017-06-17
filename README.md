@@ -1,6 +1,6 @@
 # Dollar.js
 
-A minimalistic Javascript library for DOM manipulation, event binding, introspection.
+A minimalistic Javascript library for DOM manipulation, template rendering (data binded), event binding, introspection.
 
 ### Contact me
 

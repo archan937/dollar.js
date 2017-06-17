@@ -1,22 +1,26 @@
 mod.define('Identifier', function() {
   var
-    objects = [undefined];
+    objects = [undefined],
 
-  Object.defineProperty(Object.prototype, '_id', {
-    enumerable: false,
-    value: function() {
-      var id = this.__id__;
-      if (id == undefined) {
-        Object.defineProperty(this, '__id__', {
-          enumerable: false,
-          writable: false,
-          value: (id = objects.length)
-        });
-        objects.push(this);
+  extend = function(arg) {
+    Object.defineProperty(arg, '_id', {
+      enumerable: false,
+      value: function() {
+        var id = this.__id__;
+        if (id == undefined) {
+          Object.defineProperty(this, '__id__', {
+            enumerable: false,
+            writable: false,
+            value: (id = objects.length)
+          });
+          objects.push(this);
+        }
+        return id;
       }
-      return id;
-    }
-  });
+    });
+  };
+
+  extend(Object.prototype);
 
   return {
     getobject: function(id) {
@@ -25,6 +29,8 @@ mod.define('Identifier', function() {
       }
     },
     objectid: function(object) {
+      if (!object._id)
+        extend(object);
       return object._id();
     }
   };
