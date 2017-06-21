@@ -12,10 +12,16 @@ if (typeof(Dollar) == 'undefined') {
 
 Dollar = define('dollar.js', function() {
   var $ = function() {
-    if (typeof(arguments[0]) == 'number')
-      return __fn__.getobject.apply(this, arguments);
+    var fn;
+
+    if (arguments[1] == true)
+      fn = __fn__.setobject;
+    else if (typeof(arguments[0]) == 'number')
+      fn = __fn__.getobject;
     else
-      return __fn__.$.apply(this, arguments);
+      fn = __fn__.$;
+
+    return fn.apply(this, arguments);
   };
 
   extend($, __fn__);

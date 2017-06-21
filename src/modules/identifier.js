@@ -28,6 +28,10 @@ mod.define('Identifier', function() {
         return objects[id];
       }
     },
+    setobject: function(object) {
+      objects[object._id()] = object;
+      return object;
+    },
     objectid: function(object) {
       if (!object._id)
         extend(object);
