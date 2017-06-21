@@ -360,8 +360,12 @@ mod.define('Elements', function() {
         }
       },
 
-      val: function() {
-        return this.value;
+      val: function(val) {
+        if (arguments.length) {
+          this.value = val;
+        } else {
+          return this.value;
+        }
       },
 
       root: function() {
