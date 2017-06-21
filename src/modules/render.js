@@ -190,9 +190,9 @@ mod.define('Render', function() {
   update = function(path, index) {
     var
       segments = path.match(/(.*?)\.([^\.]*\.?)$/),
-      object = $(objects[segments[1]]) || {},
+      object = getobject(objects[segments[1]]) || {},
       prop = segments[2],
-      value = ((prop == '.') ? $(objects[path]) : object[prop]),
+      value = ((prop == '.') ? getobject(objects[path]) : object[prop]),
       registered = (nodes[path] || []);
 
     each(registered, function(node) {
