@@ -223,7 +223,7 @@ mod.define('Render', function() {
       el = next;
 
       if (all || (i == index)) {
-        $.t(html, object, el, path + '[' + i + ']');
+        render(html, object, el, path + '[' + i + ']');
       }
     });
 
