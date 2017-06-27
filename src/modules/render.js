@@ -10,7 +10,9 @@ mod.define('Render', function() {
         el,
         NodeFilter.SHOW_ALL, {
           acceptNode: function(node) {
-            if (!node.hasAttribute || !node.hasAttribute('data-in')) {
+            if (node.hasAttribute && node.hasAttribute('data-in')) {
+              return NodeFilter.FILTER_REJECT;
+            } else {
               return NodeFilter.FILTER_ACCEPT;
             }
           }
