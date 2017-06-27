@@ -1,6 +1,6 @@
 mod.define('Identifier', function() {
   var
-    objects = [undefined],
+    objects,
 
   extend = function(arg) {
     Object.defineProperty(arg, '_id', {
@@ -20,6 +20,16 @@ mod.define('Identifier', function() {
     });
   };
 
+  if (!window.top.__objects__) {
+    Object.defineProperty(window.top, '__objects__', {
+      enumerable: false,
+      writable: false,
+      value: [undefined]
+    });
+  }
+
+  objects = window.top.__objects__;
+
   extend(Object.prototype);
 
   return {
@@ -27,10 +37,6 @@ mod.define('Identifier', function() {
       if (typeof(id) == 'number') {
         return objects[id];
       }
-    },
-    setobject: function(object) {
-      objects[object._id()] = object;
-      return object;
     },
     objectid: function(object) {
       if (!object._id)

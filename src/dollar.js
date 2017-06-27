@@ -14,9 +14,7 @@ Dollar = define('dollar.js', function() {
   var $ = function() {
     var fn;
 
-    if (arguments[1] == true)
-      fn = __fn__.setobject;
-    else if (typeof(arguments[0]) == 'number')
+    if (typeof(arguments[0]) == 'number')
       fn = __fn__.getobject;
     else
       fn = __fn__.$;
