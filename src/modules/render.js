@@ -115,7 +115,7 @@ mod.define('Render', function() {
     var
       registered = nodes[path] || (nodes[path] = []);
 
-    each((node instanceof Array) ? node : [node], function(textNode) {
+    each(isArray(node) ? node : [node], function(textNode) {
       if (indexOf(textNode, registered) == -1) {
         registered.push(textNode);
       }
@@ -166,7 +166,7 @@ mod.define('Render', function() {
   },
 
   parseValue = function(path, value) {
-    if (value instanceof Array) {
+    if (isArray(value)) {
       value = new Proxy(value, {
         set: function(array, key, val) {
           array[key] = val;

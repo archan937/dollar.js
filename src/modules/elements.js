@@ -81,7 +81,7 @@ mod.define('Elements', function() {
       },
 
       addClass: function() {
-        var classes = ((arguments[0] instanceof Array) ? arguments[0] : arguments);
+        var classes = isArray(arguments[0]) ? arguments[0] : arguments;
         classes = Array.prototype.join.call(classes, ' ');
         this.classList.add.apply(this.classList, classes.trim().split(/\s+/));
       },
@@ -97,7 +97,7 @@ mod.define('Elements', function() {
               classes.push(name);
           }
         } else {
-          classes = (arguments[0] instanceof Array) ? arguments[0] : arguments;
+          classes = isArray(arguments[0]) ? arguments[0] : arguments;
         }
 
         this.classList.remove.apply(this.classList, classes);

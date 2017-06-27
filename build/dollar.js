@@ -381,7 +381,7 @@ mod.define('Elements', function() {
       },
 
       addClass: function() {
-        var classes = ((arguments[0] instanceof Array) ? arguments[0] : arguments);
+        var classes = isArray(arguments[0]) ? arguments[0] : arguments;
         classes = Array.prototype.join.call(classes, ' ');
         this.classList.add.apply(this.classList, classes.trim().split(/\s+/));
       },
@@ -397,7 +397,7 @@ mod.define('Elements', function() {
               classes.push(name);
           }
         } else {
-          classes = (arguments[0] instanceof Array) ? arguments[0] : arguments;
+          classes = isArray(arguments[0]) ? arguments[0] : arguments;
         }
 
         this.classList.remove.apply(this.classList, classes);
@@ -1022,6 +1022,10 @@ mod.define('Introspect', function() {
       };
     }()),
 
+    isArray: function(arg) {
+      return Object.prototype.toString.call(arg) == '[object Array]';
+    },
+
     isRetinaDisplay: function() {
       if (window.matchMedia) {
         var mq = window.matchMedia('only screen and (min--moz-device-pixel-ratio: 1.3), only screen and (-o-min-device-pixel-ratio: 2.6/2), only screen and (-webkit-min-device-pixel-ratio: 1.3), only screen  and (min-device-pixel-ratio: 1.3), only screen and (min-resolution: 1.3dppx)');
@@ -1230,7 +1234,7 @@ mod.define('Render', function() {
     var
       registered = nodes[path] || (nodes[path] = []);
 
-    each((node instanceof Array) ? node : [node], function(textNode) {
+    each(isArray(node) ? node : [node], function(textNode) {
       if (indexOf(textNode, registered) == -1) {
         registered.push(textNode);
       }
@@ -1281,7 +1285,7 @@ mod.define('Render', function() {
   },
 
   parseValue = function(path, value) {
-    if (value instanceof Array) {
+    if (isArray(value)) {
       value = new Proxy(value, {
         set: function(array, key, val) {
           array[key] = val;
