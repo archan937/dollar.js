@@ -174,6 +174,8 @@ mod.define('Render', function() {
           array[key] = val;
           if (/^\d+$/.test(key))
             update(path, key);
+          if (key == 'length')
+            update(path, -1);
           return true;
         }
       });
@@ -224,7 +226,7 @@ mod.define('Render', function() {
       }
       el = next;
 
-      if (all || (i == index)) {
+      if (index != -1 && (all || (i == index))) {
         render(html, object, el, path + '[' + i + ']');
       }
     });
