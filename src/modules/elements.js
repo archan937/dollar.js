@@ -25,6 +25,16 @@ mod.define('Elements', function() {
         return wrap(this.parentNode);
       },
 
+      siblings: function() {
+        var siblings = [];
+        each($(this).parent().children(), function(child) {
+          if ((child.nodeName.toLowerCase() != 'template') && (child != this)) {
+            siblings.push(child);
+          }
+        }.bind(this));
+        return $(siblings);
+      },
+
       closest: function(sel, elements, context) {
         context || (context = root(this));
         elements || (elements = $(sel, context));
