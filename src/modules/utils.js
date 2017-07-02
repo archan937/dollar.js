@@ -25,6 +25,10 @@ mod.define('Utils', function() {
       color = ('000000' + color).slice(-6);  // pad with leading zeros
       color = '#' + color;                   // prepend '#'
       return color;
+    },
+
+    toArray: function(arg) {
+      return Array.prototype.slice.call(arg);
     }
   };
 });

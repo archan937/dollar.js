@@ -58,7 +58,7 @@ mod.define('Render', function() {
   },
 
   join = function() {
-    return Array.prototype.join.call(arguments, '.');
+    return toArray(arguments).join('.');
   },
 
   split = function(html) {

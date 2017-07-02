@@ -103,9 +103,11 @@ mod.define('Elements', function() {
       },
 
       addClass: function() {
-        var classes = isArray(arguments[0]) ? arguments[0] : arguments;
-        classes = Array.prototype.join.call(classes, ' ');
-        this.classList.add.apply(this.classList, classes.trim().split(/\s+/));
+        var
+          classes = isArray(arguments[0]) ? arguments[0] : arguments;
+
+        classes = toArray(classes).join(' ').trim().split(/\s+/);
+        this.classList.add.apply(this.classList, classes);
       },
 
       removeClass: function() {
@@ -122,6 +124,7 @@ mod.define('Elements', function() {
           classes = isArray(arguments[0]) ? arguments[0] : arguments;
         }
 
+        classes = toArray(classes).join(' ').trim().split(/\s+/);
         this.classList.remove.apply(this.classList, classes);
       },
 
@@ -156,25 +159,25 @@ mod.define('Elements', function() {
       },
 
       bind: function() {
-        bind.apply(window, [this].concat(Array.prototype.slice.call(arguments)));
+        bind.apply(window, [this].concat(toArray(arguments)));
       },
 
       unbind: function() {
-        unbind.apply(window, [this].concat(Array.prototype.slice.call(arguments)));
+        unbind.apply(window, [this].concat(toArray(arguments)));
       },
 
       once: function() {
-        once.apply(window, [this].concat(Array.prototype.slice.call(arguments)));
+        once.apply(window, [this].concat(toArray(arguments)));
       },
 
       on: function() {
-        var args = Array.prototype.slice.call(arguments);
+        var args = toArray(arguments);
         args[3] || (args[3] = root(this));
         on.apply(window, args);
       },
 
       trigger: function() {
-        trigger.apply(window, [this].concat(Array.prototype.slice.call(arguments)));
+        trigger.apply(window, [this].concat(toArray(arguments)));
       },
 
       width: function() {
@@ -196,7 +199,7 @@ mod.define('Elements', function() {
       },
 
       bounds: function() {
-        return bounds.apply(window, [this].concat(Array.prototype.slice.call(arguments)));
+        return bounds.apply(window, [this].concat(toArray(arguments)));
       },
 
       style: function() {
@@ -204,11 +207,11 @@ mod.define('Elements', function() {
       },
 
       computedStyle: function() {
-        return computedStyle.apply(window, [this].concat(Array.prototype.slice.call(arguments)));
+        return computedStyle.apply(window, [this].concat(toArray(arguments)));
       },
 
       cssRules: function() {
-        return cssRules.apply(window, [this].concat(Array.prototype.slice.call(arguments)));
+        return cssRules.apply(window, [this].concat(toArray(arguments)));
       },
 
       attr: function() {
@@ -245,7 +248,7 @@ mod.define('Elements', function() {
         var key = arguments[0], value = arguments[1], prop;
         if (arguments.length == 1) {
           if (typeof(key) == 'string') {
-            return computedStyle.apply(window, [this].concat(Array.prototype.slice.call(arguments)))[key];
+            return computedStyle.apply(window, [this].concat(toArray(arguments)))[key];
           } else {
             for (prop in key) {
               this.style[prop] = key[prop];
@@ -462,7 +465,7 @@ mod.define('Elements', function() {
         if (result && result.nodeType) {
           results.push(result);
         } else if (result && result.at) {
-          results = results.concat(Array.prototype.slice.call(result));
+          results = results.concat(toArray(result));
         } else {
           return result;
         }
