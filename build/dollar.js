@@ -141,24 +141,30 @@ mod.define('Collections', function() {
       return -1;
     },
 
-    each: function(array, f) {
-      for (var i = 0; i < array.length; i += 1) {
-        f(array[i], i, i == array.length - 1);
+    each: function(enumerable, f) {
+      if (isArray(enumerable)) {
+        for (var i = 0; i < enumerable.length; i += 1) {
+          f(enumerable[i], i, i == enumerable.length - 1);
+        }
+      } else {
+        each(keys(enumerable), function(key, i, last) {
+          f(enumerable[key], key, last);
+        });
       }
     },
 
-    collect: function(array, f) {
+    collect: function(enumerable, f) {
       var result = [];
-      each(array, function() {
+      each(enumerable, function() {
         result.push(f.apply(this, arguments));
       });
       return result;
     },
 
-    select: function(array, f) {
+    select: function(enumerable, f) {
       var selected = [];
-      each(array, function(el) {
-        if (f(el)) {
+      each(enumerable, function() {
+        if (f.apply(this, arguments)) {
           selected.push(el);
         }
       })
