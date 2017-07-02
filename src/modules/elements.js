@@ -47,7 +47,19 @@ mod.define('Elements', function() {
       },
 
       show: function() {
-        this.style.display = 'initial';
+        var
+          iframe = $('<iframe>').css({
+            top: '-10px',
+            left: '-10px',
+            width: 0,
+            height: 0,
+            position: 'absolute',
+            border: 0
+          }).appendTo(document.body),
+          el = $('<' + this.nodeName + '>').appendTo(iframe[0].contentWindow.document.body);
+
+        this.style.display = el.computedStyle().display;
+        iframe.remove();
       },
 
       hide: function() {

@@ -87,7 +87,7 @@ mod.define('Introspect', function() {
     },
 
     computedStyle: function(el) {
-      return window.getComputedStyle(el);
+      return window.getComputedStyle(el, null);
     },
 
     cssRules: function(el) {
