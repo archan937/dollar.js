@@ -133,7 +133,7 @@ mod.define('Collections', function() {
     },
 
     indexOf: function(val, array) {
-      for (var i = 0; i < array.length; i += 1) {
+      for (var i = 0; i < array.length; i++) {
         if (val === array[i]) {
           return i;
         }
@@ -143,7 +143,7 @@ mod.define('Collections', function() {
 
     each: function(enumerable, f) {
       if (isArray(enumerable)) {
-        for (var i = 0; i < enumerable.length; i += 1) {
+        for (var i = 0; i < enumerable.length; i++) {
           f(enumerable[i], i, i == enumerable.length - 1);
         }
       } else {
@@ -421,7 +421,7 @@ mod.define('Elements', function() {
 
         if (arguments[0] instanceof RegExp) {
           regexp = arguments[0];
-          for (i = 0; i < this.classList.length; i += 1) {
+          for (i = 0; i < this.classList.length; i++) {
             name = this.classList[i];
             if (name.match(regexp))
               classes.push(name);
@@ -540,7 +540,7 @@ mod.define('Elements', function() {
 
         if (attr instanceof RegExp) {
           regexp = attr;
-          for (i = 0; i < this.attributes.length; i += 1) {
+          for (i = 0; i < this.attributes.length; i++) {
             attr = this.attributes[i].localName;
             if (attr.match(regexp))
               this.removeAttribute(attr);
@@ -695,7 +695,7 @@ mod.define('Elements', function() {
 
     if (sel.match(/\s/)) {
       array = sel.split(' '), parents = $(array.shift(), context);
-      for (i = 0; i < parents.length; i += 1) {
+      for (i = 0; i < parents.length; i++) {
         found = found.concat($(array.join(' '), parents[i]));
       }
     } else {
@@ -711,7 +711,7 @@ mod.define('Elements', function() {
       if (f == 'ById') {
         found = [found];
       } else {
-        for (i = 0; i < found.length; i += 1) {
+        for (i = 0; i < found.length; i++) {
           array.push(found[i]);
         }
         found = array;
@@ -1042,7 +1042,7 @@ mod.define('Introspect', function() {
       src = script.getAttribute('src');
       pairs = ((src.match(/([\?]*)\?(.*)+/) || ['', '', ''])[2] || '').replace(/(^[0123456789]+|\.js(\s+)?$)/, '').split('&');
 
-      for (i = 0; i < pairs.length; i += 1) {
+      for (i = 0; i < pairs.length; i++) {
         if (pairs[i] != '') {
           pair = pairs[i].split('=');
           key = pair[0].replace(/^\s+|\s+$/g, '').toLowerCase();

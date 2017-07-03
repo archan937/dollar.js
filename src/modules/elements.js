@@ -115,7 +115,7 @@ mod.define('Elements', function() {
 
         if (arguments[0] instanceof RegExp) {
           regexp = arguments[0];
-          for (i = 0; i < this.classList.length; i += 1) {
+          for (i = 0; i < this.classList.length; i++) {
             name = this.classList[i];
             if (name.match(regexp))
               classes.push(name);
@@ -234,7 +234,7 @@ mod.define('Elements', function() {
 
         if (attr instanceof RegExp) {
           regexp = attr;
-          for (i = 0; i < this.attributes.length; i += 1) {
+          for (i = 0; i < this.attributes.length; i++) {
             attr = this.attributes[i].localName;
             if (attr.match(regexp))
               this.removeAttribute(attr);
@@ -389,7 +389,7 @@ mod.define('Elements', function() {
 
     if (sel.match(/\s/)) {
       array = sel.split(' '), parents = $(array.shift(), context);
-      for (i = 0; i < parents.length; i += 1) {
+      for (i = 0; i < parents.length; i++) {
         found = found.concat($(array.join(' '), parents[i]));
       }
     } else {
@@ -405,7 +405,7 @@ mod.define('Elements', function() {
       if (f == 'ById') {
         found = [found];
       } else {
-        for (i = 0; i < found.length; i += 1) {
+        for (i = 0; i < found.length; i++) {
           array.push(found[i]);
         }
         found = array;

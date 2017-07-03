@@ -13,7 +13,7 @@ mod.define('Introspect', function() {
       src = script.getAttribute('src');
       pairs = ((src.match(/([\?]*)\?(.*)+/) || ['', '', ''])[2] || '').replace(/(^[0123456789]+|\.js(\s+)?$)/, '').split('&');
 
-      for (i = 0; i < pairs.length; i += 1) {
+      for (i = 0; i < pairs.length; i++) {
         if (pairs[i] != '') {
           pair = pairs[i].split('=');
           key = pair[0].replace(/^\s+|\s+$/g, '').toLowerCase();

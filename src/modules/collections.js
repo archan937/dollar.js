@@ -18,7 +18,7 @@ mod.define('Collections', function() {
     },
 
     indexOf: function(val, array) {
-      for (var i = 0; i < array.length; i += 1) {
+      for (var i = 0; i < array.length; i++) {
         if (val === array[i]) {
           return i;
         }
@@ -28,7 +28,7 @@ mod.define('Collections', function() {
 
     each: function(enumerable, f) {
       if (isArray(enumerable)) {
-        for (var i = 0; i < enumerable.length; i += 1) {
+        for (var i = 0; i < enumerable.length; i++) {
           f(enumerable[i], i, i == enumerable.length - 1);
         }
       } else {
