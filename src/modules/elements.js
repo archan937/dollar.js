@@ -229,6 +229,17 @@ mod.define('Elements', function() {
         }
       },
 
+      attrs: function() {
+        var attrs = {}, i, node;
+
+        for (i = 0; i < this.attributes.length; i++) {
+          node = this.attributes.item(i);
+          attrs[node.nodeName] = node.nodeValue;
+        }
+
+        return attrs;
+      },
+
       removeAttr: function(attr) {
         var regexp, i;
 
