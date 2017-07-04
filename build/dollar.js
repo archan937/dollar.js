@@ -1186,10 +1186,18 @@ mod.define('Render', function() {
         },
         false
       ),
-      node;
+      node, i, attr;
 
     while (node = walker.nextNode()) {
-      if ((node.nodeType == Node.TEXT_NODE) && /\{\{.*?\}\}/.test(node.nodeValue)) {
+      if (node.attributes) {
+        for (i = 0; i < node.attributes.length; i++) {
+          attr = node.attributes.item(i);
+          if (/\{\{.*?\}\}/.test(attr.nodeValue)) {
+            paths.push(attr);
+          }
+        }
+      }
+      if (node.nodeType == Node.TEXT_NODE && /\{\{.*?\}\}/.test(node.nodeValue)) {
         paths.push(node);
       }
     }
@@ -1242,20 +1250,25 @@ mod.define('Render', function() {
 
   bindPaths = function(prefix, el, object) {
     each(scanPaths(el[0]), function(node) {
-      var $node = $(node), match;
+      var $node, match;
 
-      each(split(node.nodeValue), function(text) {
-        var textNode = document.createTextNode(text), path;
+      if (node.nodeType == Node.ATTRIBUTE_NODE) {
+        match = node.nodeValue.match(/\{\{\s*(.*?)\s*\}\}/);
+        bind(prefix, object, match[1], node);
 
-        if (match = text.match(/\{\{\s*(.*?)\s*\}\}/)) {
-          path = match[1];
-          bind(prefix, object, path, textNode);
-        }
+      } else {
+        $node = $(node);
 
-        $node.before(textNode);
-      });
+        each(split(node.nodeValue), function(text) {
+          var textNode = document.createTextNode(text);
+          if (match = text.match(/\{\{\s*(.*?)\s*\}\}/)) {
+            bind(prefix, object, match[1], textNode);
+          }
+          $node.before(textNode);
+        });
 
-      $node.remove();
+        $node.remove();
+      }
     });
   },
 
@@ -1263,11 +1276,10 @@ mod.define('Render', function() {
     each(scanCollections(el[0]), function(collection) {
       var
         $collection = $(collection),
-        tag = collection.nodeName.toLowerCase(),
         prop = $collection.attr('data-in'),
-        html = $collection.html(),
+        html = $collection.removeAttr('data-in').attr('data-for-property', prop).parent().html(),
         template = $collection.replace(
-          $('<template>').attr('data-tag', tag).attr('data-prop', prop).html(html)
+          $('<template>').attr('data-property', prop).html(html)
         );
 
       bind(prefix, object, prop, template);
@@ -1367,40 +1379,46 @@ mod.define('Render', function() {
       registered = (nodes[path] || []);
 
     each(registered, function(node) {
-      if (node.nodeType == Node.TEXT_NODE)
+      if (node.nodeType == Node.ATTRIBUTE_NODE || node.nodeType == Node.TEXT_NODE) {
         node.nodeValue = value || '';
-      else
+      } else {
         updateCollection(path, node, value || [], index);
+      }
     });
   },
 
   updateCollection = function(path, template, array, index) {
     var
       el = $(template),
-      tag = el.attr('data-tag'),
-      prop = el.attr('data-prop'),
+      prop = el.attr('data-property'),
       html = el.html(),
       all = typeof(index) == 'undefined',
       index = parseInt(index, 10),
-      next;
+      next, tmp;
 
     each(array || [], function(object, i) {
-      next = el.next('[data-for=' + prop + ']');
+      next = el.next('[data-for-property=' + prop + ']');
 
       if (!next.length) {
-        next = $('<' + tag + '>').attr('data-for', prop);
+        next = $('<tmp>');
         el.after(next);
       }
+
       el = next;
 
       if (index != -1 && (all || (i == index))) {
         render(html, object, el, path + '[' + i + ']');
+        if (el.children().attr('data-for-property')) {
+          tmp = el;
+          el = el.children();
+          tmp.after(el).remove();
+        }
       }
     });
 
     var i = array.length;
 
-    while ((next = el.next('[data-for=' + prop + ']')).length) {
+    while ((next = el.next('[data-for-property=' + prop + ']')).length) {
       delete objects[path + '[' + i + ']'];
       next.remove();
       i++;
