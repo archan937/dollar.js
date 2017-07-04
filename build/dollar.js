@@ -1432,19 +1432,14 @@ mod.define('Render', function() {
       el = $('template')[0];
       object = arguments[0];
       replace = true;
+    } else {
+      el = document.getElementById(arg);
     }
 
-    el || (el = document.getElementById(arg));
-
-    if (el)
-      el = $(el);
-    else
-      el = $(/\<(\w+)(.+(\<\/\1|\/?))?\>$/.test(arg) ? arg : ('<span>' + arg + '</span>'));
-
-    template = el.html();
+    template = el ? el.innerHTML : arg;
 
     if (replace)
-      el = (replace == true) ? el.outerWrap('div') : replace;
+      el = (replace == true) ? $(el).outerWrap('div') : replace;
     else
       el = $('<div>');
 
