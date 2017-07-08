@@ -690,50 +690,29 @@ mod.define('Elements', function() {
     }
   },
 
-  search = function(sel, context) {
-    context || (context = document);
+  search = function(selector, context) {
+    context = context || document;
 
-    var i, found = [], array = [], parents,
-        f = {'#': 'ById', '.': 'sByClassName', '@': 'sByName'}[sel.charAt(0)],
-        s = (f ? sel.slice(1) : sel),
-        fn = 'getElement' + (f || 'sByTagName');
-
-    if (sel.match(/(\[|\(|\=|\:)/) || sel.match(/[^\s](\#|\@|\.)/)) {
-      if (context.querySelectorAll) {
-        return context.querySelectorAll(sel);
-      }
-    }
-
-    if (sel.match(/\s/)) {
-      array = sel.split(' '), parents = $(array.shift(), context);
-      for (i = 0; i < parents.length; i++) {
-        found = found.concat($(array.join(' '), parents[i]));
-      }
-    } else {
-      if (context[fn])
-        found = context[fn](s);
-      else {
-        if (f == 'ById') {
-          f = null;
-          s = '[id="' + s + '"]';
+    var
+      regex = /^(#?[\w-]+|\.[\w-.]+)$/,
+      query = function(sel) {
+        if (regex.test(sel)) {
+          switch(sel[0]) {
+          case '#':
+            return [document.getElementById(sel.substr(1))];
+          case '.':
+            return toArray(context.getElementsByClassName(sel.substr(1).replace('.', ' ')));
+          default:
+            return toArray(context.getElementsByTagName(sel));
+          }
         }
-        found = context.querySelectorAll(s);
-      }
-      if (f == 'ById') {
-        found = [found];
-      } else {
-        for (i = 0; i < found.length; i++) {
-          array.push(found[i]);
-        }
-        found = array;
-      }
-    }
+        return toArray(context.querySelectorAll(sel));
+      },
+      found = [];
 
-    for (i = 0; i < found.length; i++) {
-      if (!found[i]) {
-        found.splice(i, 1);
-      }
-    }
+    each(selector.split(/\s*,\s*/), function(sel) {
+      found = found.concat(query(sel));
+    });
 
     return found;
   },
