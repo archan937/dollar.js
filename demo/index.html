@@ -57,7 +57,7 @@
   <body>
     <template id="example">
       <p>
-        My author's name is {{first_name}} {{last_name}}.
+        My author's name is {{ first_name }} {{ last_name }}.
       </p>
       <p>
         He likes programming in:
@@ -66,8 +66,8 @@
         <li data-in="languages">
           {{ name }}
           <ol>
-            <li data-in="tags" data-name="{{ . }}">
-              {{.}}
+            <li data-in="tags" data-name="{{ . }}" style="{{ . == 'frontend' ? 'background: #EEE' : '' }}">
+              {{ . }}
             </li>
           </ol>
         </li>

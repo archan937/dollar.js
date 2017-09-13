@@ -18,6 +18,7 @@ module.exports = function(grunt) {
       dist: {
         src: [
           'src/mod.js',
+          'src/ext/*.js',
           'src/modules/*.js',
           'src/dollar.js'
         ],

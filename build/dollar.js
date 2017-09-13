@@ -43,6 +43,332 @@ mod = (function() {
 
 define = mod.construct;
 
+if (typeof(reLexer) == 'undefined') {
+
+// *
+// * reLexer.js 0.1.1 (Uncompressed)
+// * A very simple lexer and parser library written in Javascript.
+// *
+// * (c) 2017 Paul Engel
+// * reLexer.js is licensed under MIT license
+// *
+// * $Date: 2017-09-09 20:23:55 +0100 (Sat, 09 September 2017) $
+// *
+
+reLexer = function(rules, root, defaultActions) {
+
+  root || (root = Object.keys(rules).pop());
+
+  var
+    expression,
+    actions,
+    env,
+    busy,
+    matches,
+    retried,
+    stacktrace,
+    u,//ndefined
+    p,//recedence
+    c = '_conj_',
+    n = '_named_',
+    f = 'ƒ',
+    dummy = 'ﬁ',
+
+  addMatch = function(identifier, expression, match) {
+    if (identifier.indexOf(dummy) == -1)
+      matches[identifier] = [expression, match];
+  },
+
+  matchPattern = function(pattern) {
+    if (typeof(pattern) == 'string')
+      pattern = new RegExp(pattern.replace(/[-\/\\^\$\*\+\?\.\(\)|\[\]\{\}]/g, '\\$&'));
+
+    var
+      match = expression.match(pattern);
+
+    if (match && match.index == 0) {
+      expression = expression.slice(match[0].length);
+      return match[0];
+    }
+  },
+
+  matchString = function(patternOrString, lazyParent) {
+    var
+      segments = patternOrString.match(/(.+?)(>(\w+))?(&)?(\?)?(\/(\d+))?$/) || [],
+      pattern = segments[1],
+      name = segments[3],
+      lazy = lazyParent || !!segments[4],
+      optional = !!segments[5],
+      precedence = segments[7] ? parseInt(segments[7], 10) : u,
+      rule = ((pattern || '').match(/:(\w+)/) || [])[1],
+      match;
+
+    if (name || optional || (rule && rules[rule])) {
+
+      if (pattern.match(/\|/))
+        pattern = reLexer.or.apply(null, pattern.split('|'));
+      else
+        pattern = pattern.replace(':', f);
+
+      match = matchExpression(pattern, name, lazy, precedence);
+
+      if ((match == u) && optional) {
+        match = '';
+      }
+
+    } else {
+      match = matchPattern(patternOrString);
+    }
+
+    return match;
+  },
+
+  matchConjunction = function(array, lazy) {
+    array[c] || (array[c] = 'and');
+
+    var
+      initialExpression = expression,
+      conjunction = array[c],
+      i, pattern, match, captures = [];
+
+    for (i = 0; i < array.length; i++) {
+      pattern = array[i];
+      match = matchExpression(pattern, null, lazy);
+
+      if (match != u) {
+        if (conjunction == 'and') {
+          captures.push(match);
+        } else {
+          return match;
+        }
+      } else if (conjunction == 'and') {
+        expression = initialExpression;
+        return;
+      }
+    }
+
+    if (captures.length)
+      return captures;
+  },
+
+  matchExpression = function(ruleOrPattern, name, lazy, precedence) {
+    if (expression == u)
+      return;
+
+    ruleOrPattern = ruleOrPattern || (f + root);
+
+    var
+      initialExpression = expression,
+      initialPrecedence = p,
+      rule = ((ruleOrPattern + '').indexOf(f) == 0 ? ruleOrPattern.slice(1) : u),
+      isRootMatch = rule == root,
+      pattern = rules[rule],
+      action = actions && actions[rule],
+      identifier, matched, match, parse,
+      e, m, i, r;
+
+    if (p && precedence && p > precedence)
+      return;
+
+    if (!pattern) {
+      rule = u;
+      pattern = ruleOrPattern;
+
+    } else {
+      identifier = rule + ': ' + expression;
+
+      if (arguments.length && (matched = matches[identifier])) {
+        expression = matched[0];
+        return matched[1];
+
+      } else if (busy[identifier])
+        return;
+
+      busy[identifier] = !isRootMatch;
+    }
+
+    if (precedence)
+      p = precedence;
+
+    if (expression.indexOf(dummy) == -1)
+      stacktrace.push(expression + ' (#' + stacktrace.length + ') ' + (rule ? '(rule) ' + rule : pattern).toString());
+
+    if (arguments.length && (matched = matches['>' + identifier])) {
+      expression = matched[0];
+      match = matched[1];
+
+    } else {
+      switch (pattern.constructor) {
+      case RegExp:
+        match = matchPattern(pattern);
+        break;
+      case String:
+        match = matchString(pattern, lazy);
+        break;
+      case Array:
+        match = matchConjunction(pattern, lazy);
+        break;
+      }
+    }
+
+    p = initialPrecedence;
+
+    if (rule)
+      busy[identifier] = false;
+
+    if (!isRootMatch && identifier)
+      addMatch(identifier, expression, match);
+
+    if ((match != u) || (initialExpression != expression)) {
+      if (rule || name) {
+        if (!env || action)
+          match = normalizeMatch(name, lazy, rule, pattern, match);
+        if (env && action) {
+          parse = function() {
+            return action(env, this.captures, this);
+          }.bind(match);
+          match = lazy ? parse : parse();
+        }
+      }
+
+      if (env && name) {
+        match = [name, match];
+        match[n] = true;
+      }
+
+      if (expression != u) {
+        if (!expression.length)
+          expression = u;
+
+        else if (rule && precedence != u && expression && expression.indexOf(dummy) == -1) {
+          e = expression;
+          m = match;
+          i = '>' + root + ': ' + dummy + e;
+
+          expression = dummy + e;
+          matches[i] = [e, match];
+
+          r = matchExpression.apply(this, arguments);
+
+          if (r == u) {
+            expression = e;
+            match = m;
+          } else {
+            match = r;
+          }
+
+          delete matches[i];
+        }
+      }
+
+      if (!isRootMatch && identifier)
+        addMatch(identifier, expression, match);
+
+      return match;
+    }
+  },
+
+  normalizeMatch = function(name, lazy, rule, pattern, match) {
+    var
+      specs = {},
+      object = {},
+      capture, i;
+
+    if (name)
+      specs.name = name;
+
+    if (lazy)
+      specs.lazy = lazy;
+
+    if (rule)
+      specs.rule = rule;
+
+    specs.pattern = pattern;
+
+    if (pattern[c])
+      specs.conjunction = pattern[c];
+
+    if (env && (match.constructor == Array)) {
+      for (i = 0; i < match.length; i++) {
+        capture = match[i];
+        if (capture && capture[n]) {
+          object[capture[0]] = capture[1];
+        }
+      }
+    }
+
+    specs.captures = Object.keys(object).length ? newProxy(object) : match;
+
+    return specs;
+  },
+
+  newProxy = function(captures) {
+    return new Proxy(captures, {
+      get: function(object, key) {
+        var value = object[key];
+        return (value && value.constructor == Function) ? value() : value;
+      }
+    });
+  },
+
+  scan = function() {
+    var match, index;
+
+    try {
+      p = u;
+      match = matchExpression();
+
+      if (expression != u) {
+        if (retried == expression)
+          throw 'Unable to match expression: ' + JSON.stringify(expression);
+        else {
+          retried = expression;
+          matches['>' + root + ': ' + expression] = [expression, match];
+          return scan();
+        }
+      } else
+        return match;
+
+    } catch(e) {
+      index = e.message && e.message.match('Maximum call stack size exceeded') ? -30 : -15;
+      console.error(e);
+      console.error('Expressions backtrace:\n' + stacktrace.slice(index).reverse().join('\n'));
+    }
+  },
+
+  lex = function(lexExpression, definedActions, environment) {
+    lexExpression = lexExpression.trim();
+
+    if (lexExpression) {
+      expression = lexExpression;
+      actions = definedActions || defaultActions;
+      env = environment;
+      busy = {};
+      retried = u;
+      matches = {};
+      stacktrace ? stacktrace.splice(0) : (stacktrace = []);
+      return scan();
+    }
+  };
+
+  this.tokenize = function(expression) {
+    return lex(expression);
+  };
+
+  this.parse = function(expression, env, actions) {
+    return lex(expression, actions, env || {});
+  };
+
+};
+
+or = reLexer.or = function() {
+  var array = [].slice.call(arguments);
+  array._conj_ = 'or';
+  return array;
+};
+
+}
+
 mod.define('Ajax', function() {
   var
     ajax = function() {
@@ -1148,6 +1474,145 @@ mod.define('Render', function() {
   var
     nodes = {},
     objects = {},
+    binaryExpression = function(env, captures) {
+      var
+        left = captures.left,
+        operator = captures.operator,
+        right = captures.right;
+
+      switch(operator) {
+      case '&&':
+        return left && right;
+      case '||':
+        return left || right;
+      case '+':
+        return left + right;
+      case '-':
+        return left - right;
+      case '*':
+        return left * right;
+      case '/':
+        return left / right;
+      case '<':
+        return left < right;
+      case '<=':
+        return left <= right;
+      case '==':
+        return left == right;
+      case '!=':
+        return left != right;
+      case '>':
+        return left > right;
+      case '>=':
+        return left >= right;
+      }
+    },
+    lexer = new reLexer({
+      space: /\s+/,
+      path: /(\.|[a-zA-Z](\w*)\.?([\w+\.]+)?)/,
+      string: /(["'])(?:(?=(\\?))\2.)*?\1/,
+      number: /-?\d+(\.\d+)?/,
+      boolean: /(true|false)/,
+      primitive: ':boolean|:number|:string|:path',
+      multiplyDivideExpression: [
+        ':expression>left',
+        ':space?',
+        '*|/>operator',
+        ':space?',
+        ':expression>right'
+      ],
+      addSubtractExpression: [
+        ':expression>left',
+        ':space?',
+        '+|->operator',
+        ':space?',
+        ':expression>right'
+      ],
+      comparisonExpression: [
+        ':expression>left',
+        ':space?',
+        '<|<=|==|!=|>=|>>operator',
+        ':space?',
+        ':expression>right'
+      ],
+      logicalOperator: or(
+        '&&',
+        '||'
+      ),
+      logicalExpression: [
+        ':expression>left',
+        ':space?',
+        ':logicalOperator>operator',
+        ':space?',
+        ':expression>right'
+      ],
+      ternaryExpression: [
+        ':expression>statement',
+        ':space?', '?', ':space?',
+        ':expression>true&',
+        ':space?', ':', ':space?',
+        ':expression>false&'
+      ],
+      encapsulation: [
+        '(', ':space?', ':expression>expression&', ':space?', ')'
+      ],
+      expression: or(
+        ':encapsulation',
+        ':ternaryExpression/1',
+        ':logicalExpression/2',
+        ':comparisonExpression/3',
+        ':addSubtractExpression/4',
+        ':multiplyDivideExpression/5',
+        ':primitive'
+      )
+    }, 'expression', {
+      path: function(env, path) {
+        if (path == '.') return env;
+
+        var
+          properties = path.split('.'),
+          value = env,
+          i, p;
+
+        for (i = 0; i < properties.length; i++) {
+          p = properties[i];
+          if (value && value.hasOwnProperty(p))
+            value = value[p];
+          else
+            return;
+        }
+
+        return value;
+      },
+      string: function(env, string) {
+        return eval(string);
+      },
+      number: function(env, number) {
+        var type = number.match(/\./) ? 'Float' : 'Int';
+        return Number['parse' + type](number);
+      },
+      boolean: function(env, bool) {
+        return bool == 'true';
+      },
+      ternaryExpression: function(env, captures) {
+        return captures.statement ? captures.true : captures.false;
+      },
+      logicalExpression: function(env, captures) {
+        return binaryExpression(env, captures);
+      },
+      comparisonExpression: function(env, captures) {
+        return binaryExpression(env, captures);
+      },
+      multiplyDivideExpression: function(env, captures) {
+        return binaryExpression(env, captures);
+      },
+      addSubtractExpression: function(env, captures) {
+        return binaryExpression(env, captures);
+      },
+      encapsulation: function(env, captures) {
+        return captures.expression;
+      }
+    }),
 
   scanPaths = function(el) {
     var
@@ -1261,14 +1726,21 @@ mod.define('Render', function() {
           $('<template>').attr('data-property', prop).html(html)
         );
 
-      bind(prefix, object, prop, template);
+      bind(prefix, object, prop, template[0]);
     });
   },
 
-  bind = function(prefix, object, path, node) {
-    register(join(prefix, path), node);
-    observe(prefix, object, path);
-    trigger(join(prefix, path));
+  bind = function(prefix, object, expression, node) {
+    node.__prefix__ = prefix;
+    node.__expression__ = expression;
+
+    lexer.parse(expression, {}, {
+      path: function(env, path) {
+        register(join(prefix, path), node);
+        observe(prefix, object, path);
+        trigger(join(prefix, path));
+      }
+    });
   },
 
   register = function(path, node) {
@@ -1283,18 +1755,13 @@ mod.define('Render', function() {
   },
 
   observe = function(prefix, object, path) {
-    if (object && typeof(object) == 'object')
+    if (object && ((typeof(object) == 'object') || (path == '.')))
       objects[prefix] = object._id();
     else
       delete objects[prefix];
 
-    if (!object || !path)
+    if (!object || !path || (path == '.'))
       return;
-
-    if (path == '.') {
-      objects[join(prefix, path)] = object._id();
-      return;
-    }
 
     var
       segments = path.match(/(\w+)\.?([\w+\.]*)/),
@@ -1351,32 +1818,37 @@ mod.define('Render', function() {
 
   update = function(path, index) {
     var
-      segments = path.match(/(.*?)\.([^\.]*\.?)$/),
-      object = getobject(objects[segments[1]]) || {},
-      prop = segments[2],
-      value = ((prop == '.') ? getobject(objects[path]) : object[prop]),
-      registered = (nodes[path] || []);
+      registered = nodes[path] || [],
+      env, value;
 
     each(registered, function(node) {
+
+      env = getobject(objects[node.__prefix__]);
+      value = lexer.parse(node.__expression__, env);
+
       if (node.nodeType == Node.ATTRIBUTE_NODE || node.nodeType == Node.TEXT_NODE) {
         node.nodeValue = value || '';
       } else {
-        updateCollection(path, node, value || [], index);
+        updateCollection(node, value, index);
       }
+
     });
   },
 
-  updateCollection = function(path, template, array, index) {
+  updateCollection = function(node, collection, index) {
+    collection || (collection = []);
+
     var
-      el = $(template),
-      prop = el.attr('data-property'),
+      el = $(node),
+      property = el.attr('data-property'),
       html = el.html(),
+      path = node.__prefix__ + '.' + property,
       all = typeof(index) == 'undefined',
       index = parseInt(index, 10),
       next, tmp;
 
-    each(array || [], function(object, i) {
-      next = el.next('[data-for-property=' + prop + ']');
+    each(collection, function(object, i) {
+      next = el.next('[data-for-property=' + property + ']');
 
       if (!next.length) {
         next = $('<tmp>');
@@ -1395,9 +1867,9 @@ mod.define('Render', function() {
       }
     });
 
-    var i = array.length;
+    var i = collection.length;
 
-    while ((next = el.next('[data-for-property=' + prop + ']')).length) {
+    while ((next = el.next('[data-for-property=' + property + ']')).length) {
       delete objects[path + '[' + i + ']'];
       next.remove();
       i++;

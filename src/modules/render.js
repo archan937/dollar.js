@@ -2,6 +2,145 @@ mod.define('Render', function() {
   var
     nodes = {},
     objects = {},
+    binaryExpression = function(env, captures) {
+      var
+        left = captures.left,
+        operator = captures.operator,
+        right = captures.right;
+
+      switch(operator) {
+      case '&&':
+        return left && right;
+      case '||':
+        return left || right;
+      case '+':
+        return left + right;
+      case '-':
+        return left - right;
+      case '*':
+        return left * right;
+      case '/':
+        return left / right;
+      case '<':
+        return left < right;
+      case '<=':
+        return left <= right;
+      case '==':
+        return left == right;
+      case '!=':
+        return left != right;
+      case '>':
+        return left > right;
+      case '>=':
+        return left >= right;
+      }
+    },
+    lexer = new reLexer({
+      space: /\s+/,
+      path: /(\.|[a-zA-Z](\w*)\.?([\w+\.]+)?)/,
+      string: /(["'])(?:(?=(\\?))\2.)*?\1/,
+      number: /-?\d+(\.\d+)?/,
+      boolean: /(true|false)/,
+      primitive: ':boolean|:number|:string|:path',
+      multiplyDivideExpression: [
+        ':expression>left',
+        ':space?',
+        '*|/>operator',
+        ':space?',
+        ':expression>right'
+      ],
+      addSubtractExpression: [
+        ':expression>left',
+        ':space?',
+        '+|->operator',
+        ':space?',
+        ':expression>right'
+      ],
+      comparisonExpression: [
+        ':expression>left',
+        ':space?',
+        '<|<=|==|!=|>=|>>operator',
+        ':space?',
+        ':expression>right'
+      ],
+      logicalOperator: or(
+        '&&',
+        '||'
+      ),
+      logicalExpression: [
+        ':expression>left',
+        ':space?',
+        ':logicalOperator>operator',
+        ':space?',
+        ':expression>right'
+      ],
+      ternaryExpression: [
+        ':expression>statement',
+        ':space?', '?', ':space?',
+        ':expression>true&',
+        ':space?', ':', ':space?',
+        ':expression>false&'
+      ],
+      encapsulation: [
+        '(', ':space?', ':expression>expression&', ':space?', ')'
+      ],
+      expression: or(
+        ':encapsulation',
+        ':ternaryExpression/1',
+        ':logicalExpression/2',
+        ':comparisonExpression/3',
+        ':addSubtractExpression/4',
+        ':multiplyDivideExpression/5',
+        ':primitive'
+      )
+    }, 'expression', {
+      path: function(env, path) {
+        if (path == '.') return env;
+
+        var
+          properties = path.split('.'),
+          value = env,
+          i, p;
+
+        for (i = 0; i < properties.length; i++) {
+          p = properties[i];
+          if (value && value.hasOwnProperty(p))
+            value = value[p];
+          else
+            return;
+        }
+
+        return value;
+      },
+      string: function(env, string) {
+        return eval(string);
+      },
+      number: function(env, number) {
+        var type = number.match(/\./) ? 'Float' : 'Int';
+        return Number['parse' + type](number);
+      },
+      boolean: function(env, bool) {
+        return bool == 'true';
+      },
+      ternaryExpression: function(env, captures) {
+        return captures.statement ? captures.true : captures.false;
+      },
+      logicalExpression: function(env, captures) {
+        return binaryExpression(env, captures);
+      },
+      comparisonExpression: function(env, captures) {
+        return binaryExpression(env, captures);
+      },
+      multiplyDivideExpression: function(env, captures) {
+        return binaryExpression(env, captures);
+      },
+      addSubtractExpression: function(env, captures) {
+        return binaryExpression(env, captures);
+      },
+      encapsulation: function(env, captures) {
+        return captures.expression;
+      }
+    }),
 
   scanPaths = function(el) {
     var
@@ -115,14 +254,21 @@ mod.define('Render', function() {
           $('<template>').attr('data-property', prop).html(html)
         );
 
-      bind(prefix, object, prop, template);
+      bind(prefix, object, prop, template[0]);
     });
   },
 
-  bind = function(prefix, object, path, node) {
-    register(join(prefix, path), node);
-    observe(prefix, object, path);
-    trigger(join(prefix, path));
+  bind = function(prefix, object, expression, node) {
+    node.__prefix__ = prefix;
+    node.__expression__ = expression;
+
+    lexer.parse(expression, {}, {
+      path: function(env, path) {
+        register(join(prefix, path), node);
+        observe(prefix, object, path);
+        trigger(join(prefix, path));
+      }
+    });
   },
 
   register = function(path, node) {
@@ -137,18 +283,13 @@ mod.define('Render', function() {
   },
 
   observe = function(prefix, object, path) {
-    if (object && typeof(object) == 'object')
+    if (object && ((typeof(object) == 'object') || (path == '.')))
       objects[prefix] = object._id();
     else
       delete objects[prefix];
 
-    if (!object || !path)
+    if (!object || !path || (path == '.'))
       return;
-
-    if (path == '.') {
-      objects[join(prefix, path)] = object._id();
-      return;
-    }
 
     var
       segments = path.match(/(\w+)\.?([\w+\.]*)/),
@@ -205,32 +346,37 @@ mod.define('Render', function() {
 
   update = function(path, index) {
     var
-      segments = path.match(/(.*?)\.([^\.]*\.?)$/),
-      object = getobject(objects[segments[1]]) || {},
-      prop = segments[2],
-      value = ((prop == '.') ? getobject(objects[path]) : object[prop]),
-      registered = (nodes[path] || []);
+      registered = nodes[path] || [],
+      env, value;
 
     each(registered, function(node) {
+
+      env = getobject(objects[node.__prefix__]);
+      value = lexer.parse(node.__expression__, env);
+
       if (node.nodeType == Node.ATTRIBUTE_NODE || node.nodeType == Node.TEXT_NODE) {
         node.nodeValue = value || '';
       } else {
-        updateCollection(path, node, value || [], index);
+        updateCollection(node, value, index);
       }
+
     });
   },
 
-  updateCollection = function(path, template, array, index) {
+  updateCollection = function(node, collection, index) {
+    collection || (collection = []);
+
     var
-      el = $(template),
-      prop = el.attr('data-property'),
+      el = $(node),
+      property = el.attr('data-property'),
       html = el.html(),
+      path = node.__prefix__ + '.' + property,
       all = typeof(index) == 'undefined',
       index = parseInt(index, 10),
       next, tmp;
 
-    each(array || [], function(object, i) {
-      next = el.next('[data-for-property=' + prop + ']');
+    each(collection, function(object, i) {
+      next = el.next('[data-for-property=' + property + ']');
 
       if (!next.length) {
         next = $('<tmp>');
@@ -249,9 +395,9 @@ mod.define('Render', function() {
       }
     });
 
-    var i = array.length;
+    var i = collection.length;
 
-    while ((next = el.next('[data-for-property=' + prop + ']')).length) {
+    while ((next = el.next('[data-for-property=' + property + ']')).length) {
       delete objects[path + '[' + i + ']'];
       next.remove();
       i++;
