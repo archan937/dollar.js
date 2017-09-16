@@ -1,13 +1,13 @@
 if (typeof(reLexer) == 'undefined') {
 
 // *
-// * reLexer.js 0.1.2 (Uncompressed)
+// * reLexer.js 0.1.3 (Uncompressed)
 // * A very simple lexer and parser library written in Javascript.
 // *
 // * (c) 2017 Paul Engel
 // * reLexer.js is licensed under MIT license
 // *
-// * $Date: 2017-09-14 22:43:36 +0100 (Thu, 14 September 2017) $
+// * $Date: 2017-09-16 20:28:42 +0100 (Sat, 16 September 2017) $
 // *
 
 reLexer = function(rules, root, defaultActions) {
@@ -118,7 +118,7 @@ reLexer = function(rules, root, defaultActions) {
       rule = ((ruleOrPattern + '').indexOf(f) == 0 ? ruleOrPattern.slice(1) : u),
       isRootMatch = rule == root,
       pattern = rules[rule],
-      action = actions && actions[rule],
+      action = (actions && rule) ? (actions[rule] || actions['*']) : u,
       identifier, matched, match, parse,
       e, m, i, r;
 
@@ -302,7 +302,9 @@ reLexer = function(rules, root, defaultActions) {
       retried = u;
       matches = {};
       stacktrace ? stacktrace.splice(0) : (stacktrace = []);
-      return scan();
+
+      var result = scan();
+      return typeof(result) == 'function' ? result() : result;
     }
   };
 

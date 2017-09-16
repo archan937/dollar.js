@@ -46,13 +46,13 @@ define = mod.construct;
 if (typeof(reLexer) == 'undefined') {
 
 // *
-// * reLexer.js 0.1.2 (Uncompressed)
+// * reLexer.js 0.1.3 (Uncompressed)
 // * A very simple lexer and parser library written in Javascript.
 // *
 // * (c) 2017 Paul Engel
 // * reLexer.js is licensed under MIT license
 // *
-// * $Date: 2017-09-14 22:43:36 +0100 (Thu, 14 September 2017) $
+// * $Date: 2017-09-16 20:28:42 +0100 (Sat, 16 September 2017) $
 // *
 
 reLexer = function(rules, root, defaultActions) {
@@ -163,7 +163,7 @@ reLexer = function(rules, root, defaultActions) {
       rule = ((ruleOrPattern + '').indexOf(f) == 0 ? ruleOrPattern.slice(1) : u),
       isRootMatch = rule == root,
       pattern = rules[rule],
-      action = actions && actions[rule],
+      action = (actions && rule) ? (actions[rule] || actions['*']) : u,
       identifier, matched, match, parse,
       e, m, i, r;
 
@@ -347,7 +347,9 @@ reLexer = function(rules, root, defaultActions) {
       retried = u;
       matches = {};
       stacktrace ? stacktrace.splice(0) : (stacktrace = []);
-      return scan();
+
+      var result = scan();
+      return typeof(result) == 'function' ? result() : result;
     }
   };
 
@@ -1553,16 +1555,24 @@ mod.define('Render', function() {
         ':space?', ':', ':space?',
         ':expression>false&'
       ],
+      conditionalExpression: [
+        ':expression>expression&',
+        ':space?',
+        'if|unless>operator',
+        ':space?',
+        ':expression>statement'
+      ],
       encapsulation: [
         '(', ':space?', ':expression>expression&', ':space?', ')'
       ],
       expression: or(
         ':encapsulation',
-        ':ternaryExpression/1',
-        ':logicalExpression/2',
-        ':comparisonExpression/3',
-        ':addSubtractExpression/4',
-        ':multiplyDivideExpression/5',
+        ':conditionalExpression/1',
+        ':ternaryExpression/2',
+        ':logicalExpression/3',
+        ':comparisonExpression/4',
+        ':addSubtractExpression/5',
+        ':multiplyDivideExpression/6',
         ':primitive'
       )
     }, 'expression', {
@@ -1600,20 +1610,27 @@ mod.define('Render', function() {
       boolean: function(env, bool) {
         return bool == 'true';
       },
-      ternaryExpression: function(env, captures) {
-        return captures.statement ? captures.true : captures.false;
-      },
-      logicalExpression: function(env, captures) {
-        return binaryExpression(env, captures);
-      },
-      comparisonExpression: function(env, captures) {
-        return binaryExpression(env, captures);
-      },
       multiplyDivideExpression: function(env, captures) {
         return binaryExpression(env, captures);
       },
       addSubtractExpression: function(env, captures) {
         return binaryExpression(env, captures);
+      },
+      comparisonExpression: function(env, captures) {
+        return binaryExpression(env, captures);
+      },
+      logicalExpression: function(env, captures) {
+        return binaryExpression(env, captures);
+      },
+      ternaryExpression: function(env, captures) {
+        return captures.statement ? captures.true : captures.false;
+      },
+      conditionalExpression: function(env, captures) {
+        var bool = captures.statement;
+        if (captures.operator == 'unless')
+          bool = !bool;
+        if (bool)
+          return captures.expression;
       },
       encapsulation: function(env, captures) {
         return captures.expression;
@@ -1751,6 +1768,20 @@ mod.define('Render', function() {
         register(identifier, node);
         observe(prefix, object, path);
         trigger(identifier);
+      },
+      '*': function(env, captures) {
+        switch (typeof(captures)) {
+        case 'function':
+          captures = captures();
+          break;
+        case 'object':
+          if (captures)
+            each(Object.keys(captures), function(key) {
+              captures[key];
+            });
+          break;
+        }
+        return captures;
       }
     });
   },

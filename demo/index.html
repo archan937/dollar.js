@@ -57,7 +57,11 @@
   <body>
     <template id="example">
       <p>
-        My author's name is {{ first_name }} {{ last_name }}.
+        My author's name is
+        <span style="{{ 'background: #EEE' if first_name == 'Paul' }}">
+          {{ first_name }}
+        </span>
+        {{ last_name }}.
       </p>
       <p>
         He likes programming in:

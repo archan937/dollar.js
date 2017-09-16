@@ -81,16 +81,24 @@ mod.define('Render', function() {
         ':space?', ':', ':space?',
         ':expression>false&'
       ],
+      conditionalExpression: [
+        ':expression>expression&',
+        ':space?',
+        'if|unless>operator',
+        ':space?',
+        ':expression>statement'
+      ],
       encapsulation: [
         '(', ':space?', ':expression>expression&', ':space?', ')'
       ],
       expression: or(
         ':encapsulation',
-        ':ternaryExpression/1',
-        ':logicalExpression/2',
-        ':comparisonExpression/3',
-        ':addSubtractExpression/4',
-        ':multiplyDivideExpression/5',
+        ':conditionalExpression/1',
+        ':ternaryExpression/2',
+        ':logicalExpression/3',
+        ':comparisonExpression/4',
+        ':addSubtractExpression/5',
+        ':multiplyDivideExpression/6',
         ':primitive'
       )
     }, 'expression', {
@@ -128,20 +136,27 @@ mod.define('Render', function() {
       boolean: function(env, bool) {
         return bool == 'true';
       },
-      ternaryExpression: function(env, captures) {
-        return captures.statement ? captures.true : captures.false;
-      },
-      logicalExpression: function(env, captures) {
-        return binaryExpression(env, captures);
-      },
-      comparisonExpression: function(env, captures) {
-        return binaryExpression(env, captures);
-      },
       multiplyDivideExpression: function(env, captures) {
         return binaryExpression(env, captures);
       },
       addSubtractExpression: function(env, captures) {
         return binaryExpression(env, captures);
+      },
+      comparisonExpression: function(env, captures) {
+        return binaryExpression(env, captures);
+      },
+      logicalExpression: function(env, captures) {
+        return binaryExpression(env, captures);
+      },
+      ternaryExpression: function(env, captures) {
+        return captures.statement ? captures.true : captures.false;
+      },
+      conditionalExpression: function(env, captures) {
+        var bool = captures.statement;
+        if (captures.operator == 'unless')
+          bool = !bool;
+        if (bool)
+          return captures.expression;
       },
       encapsulation: function(env, captures) {
         return captures.expression;
@@ -279,6 +294,20 @@ mod.define('Render', function() {
         register(identifier, node);
         observe(prefix, object, path);
         trigger(identifier);
+      },
+      '*': function(env, captures) {
+        switch (typeof(captures)) {
+        case 'function':
+          captures = captures();
+          break;
+        case 'object':
+          if (captures)
+            each(Object.keys(captures), function(key) {
+              captures[key];
+            });
+          break;
+        }
+        return captures;
       }
     });
   },
